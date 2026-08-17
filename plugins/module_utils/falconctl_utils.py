@@ -74,6 +74,17 @@ def __get_many(opts):
     return {opt: __get(opt) for opt in opts}
 
 
+def _split_value(cleaned):
+    """Return the value from an '<option>=<value>' string.
+
+    Returns None when no '=' delimiter is present instead of raising
+    IndexError on sensors that changed an option's output format (e.g. the
+    backend option on 7.40+, which prints a deprecation notice with no '=').
+    """
+    parts = cleaned.split("=", 1)
+    return parts[1] if len(parts) > 1 else None
+
+
 def format_stdout(stdout):
     """Formats output from falconctl"""
     # Format stdout
@@ -82,13 +93,13 @@ def format_stdout(stdout):
 
     # Expect stdout in <option>=<value>
     if "version" in stdout:
-        output = re.sub(r"[\"\s\n]|\(.*\)", "", stdout).split("=")[1]
+        output = _split_value(re.sub(r"[\"\s\n]|\(.*\)", "", stdout))
     elif "rfm-reason" in stdout:
         output = re.sub(r"^rfm-reason=|[\"\s\n\.]|\(.*\)", "", stdout)
     elif "aph" in stdout:
-        output = re.sub(r"\.$\n", "", stdout).split("=")[1]
+        output = _split_value(re.sub(r"\.$\n", "", stdout))
     else:
-        output = re.sub(r"[\"\s\n\.]|\(.*\)", "", stdout).split("=")[1]
+        output = _split_value(re.sub(r"[\"\s\n\.]|\(.*\)", "", stdout))
     return output if output else None
 
 
